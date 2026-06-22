@@ -21,8 +21,7 @@ try:
     from langchain_core.tools import StructuredTool
 except ImportError as exc:  # pragma: no cover - import-guard
     raise ImportError(
-        "LangChain 통합을 쓰려면 langchain-core 가 필요합니다. "
-        "설치: pip install loftbox[langchain]"
+        "LangChain 통합을 쓰려면 langchain-core 가 필요합니다. 설치: pip install loftbox[langchain]"
     ) from exc
 
 from . import _common

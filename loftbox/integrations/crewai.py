@@ -79,7 +79,9 @@ class CheckInboxTool(_LoftBoxBaseTool):
     def _run(
         self, mailbox_id: str, limit: Optional[int] = None, cursor: Optional[str] = None
     ) -> str:
-        return _common.run_check_inbox(self._client, mailbox_id=mailbox_id, limit=limit, cursor=cursor)
+        return _common.run_check_inbox(
+            self._client, mailbox_id=mailbox_id, limit=limit, cursor=cursor
+        )
 
 
 class ListMessagesTool(_LoftBoxBaseTool):
