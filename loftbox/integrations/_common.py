@@ -48,7 +48,7 @@ class ListMessagesArgs(BaseModel):
 
     mailbox_id: Optional[str] = Field(default=None, description="메일박스 ID 필터(선택)")
     direction: Optional[str] = Field(
-        default=None, description="방향 필터: 'inbound' 또는 'outbound'(선택)"
+        default=None, description="방향 필터: 'incoming' 또는 'outgoing'(선택)"
     )
     status: Optional[str] = Field(default=None, description="상태 필터(선택)")
     q: Optional[str] = Field(default=None, description="전문 검색어(선택)")
