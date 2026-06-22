@@ -76,6 +76,72 @@ while True:
     page = client.messages.list(mailbox_id=mailbox.id, limit=50, cursor=page.next_cursor)
 ```
 
+## 프레임워크 통합 (LangChain / CrewAI)
+
+LoftBox 도구를 LLM 에이전트 프레임워크에 그대로 꽂을 수 있습니다. 노출 도구:
+`send_email`, `check_inbox`, `list_messages`, `approve_message`, `reject_message`.
+
+각 프레임워크는 선택 의존성으로 설치합니다(미설치 시에도 base SDK 는 정상 동작):
+
+```bash
+pip install loftbox[langchain]   # LangChain
+pip install loftbox[crewai]      # CrewAI
+```
+
+### LangChain
+
+```python
+from loftbox import LoftBox
+from loftbox.integrations.langchain import LoftBoxToolkit
+
+client = LoftBox(api_key="lb_live_xxx")
+tools = LoftBoxToolkit(client).get_tools()
+
+# tools 를 LangChain 에이전트에 전달
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "너는 이메일을 다루는 에이전트다."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}"),
+])
+agent = create_tool_calling_agent(llm, tools, prompt)
+AgentExecutor(agent=agent, tools=tools).invoke(
+    {"input": "mb_123 받은편지함에 새 메일 있는지 확인해줘"}
+)
+```
+
+전체 예제: `examples/langchain_agent.py`.
+
+### CrewAI
+
+```python
+from loftbox import LoftBox
+from loftbox.integrations.crewai import get_crewai_tools
+from crewai import Agent, Task, Crew
+
+client = LoftBox(api_key="lb_live_xxx")
+tools = get_crewai_tools(client)
+
+support = Agent(
+    role="이메일 지원 담당",
+    goal="받은편지함을 확인하고 답장한다",
+    backstory="LoftBox 메일박스를 운영하는 에이전트.",
+    tools=tools,
+)
+task = Task(
+    description="mb_123 받은편지함을 확인하고 요약하라",
+    agent=support,
+    expected_output="새 메일 요약",
+)
+Crew(agents=[support], tasks=[task]).kickoff()
+```
+
+전체 예제: `examples/crewai_agent.py`.
+
 ## 예제
 
 `examples/quickstart.py` 참고.

@@ -39,7 +39,7 @@ from .models import (
 
 DEFAULT_BASE_URL = "https://api.loftbox.net"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "loftbox-python/0.1.0"
+USER_AGENT = "loftbox-python/0.2.0"
 
 
 class LoftBox:

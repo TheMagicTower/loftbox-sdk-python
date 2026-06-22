@@ -1,6 +1,6 @@
 [project]
 name = "loftbox"
-version = "0.1.0"
+version = "0.2.0"
 description = "LoftBox Python SDK - Email infrastructure for AI agents"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -17,8 +17,11 @@ Homepage = "https://loftbox.net"
 Repository = "https://github.com/TheMagicTower/loftbox-sdk-python"
 
 [project.optional-dependencies]
-# 프레임워크 통합(LangChain/CrewAI)은 구현 후 추가 — 미구현 광고 금지.
-dev = ["pytest>=7", "respx>=0.20", "mypy>=1.8", "ruff>=0.4"]
+langchain = ["langchain-core>=0.1"]
+crewai = ["crewai>=0.1"]
+# dev 에는 langchain-core 만 포함(테스트용). crewai 는 의존성이 무거워 제외 —
+# crewai 통합 테스트는 미설치 시 importorskip 으로 skip 된다.
+dev = ["pytest>=7", "respx>=0.20", "mypy>=1.8", "ruff>=0.4", "langchain-core>=0.1"]
 
 [build-system]
 requires = ["hatchling"]
