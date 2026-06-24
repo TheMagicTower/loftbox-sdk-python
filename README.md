@@ -10,6 +10,35 @@ pip install loftbox
 
 요구사항: Python 3.9+.
 
+## 자가 가입 — 인증 없이 즉시 키 받기
+
+콘솔 가입 없이 **인증 없는 한 번의 호출**로 바로 쓸 수 있는 API 키를 받습니다(제한 모드).
+미검증 동안은 가입 시 선언한 owner 이메일하고만 발신·수신할 수 있고(닫힌 루프 PoC), owner 가
+이메일로 클레임(검증)하면 제한이 풀립니다. 미검증 계정은 30일 후 자동 폐기됩니다.
+
+```bash
+curl -X POST https://api.loftbox.net/v1/auth/agent-signup \
+  -H 'content-type: application/json' \
+  -d '{"owner_email":"you@example.com","referrer":"my-app"}'
+# → { "org_id": "...", "mailbox_address": "bot-...@mail.loftbox.net",
+#     "api_key": "lb_live_...", "signup_status": "unverified", "claim": "..." }
+```
+
+받은 `api_key` 로 바로 SDK 를 초기화합니다. 제한 모드에선 `to` 가 owner 이메일이어야 합니다:
+
+```python
+from loftbox import LoftBox
+
+with LoftBox(api_key="lb_live_...") as client:  # 자가 가입으로 받은 키
+    # 제한 모드: 수신자는 owner 이메일만 허용(클레임 전)
+    client.messages.send(mailbox_id=..., to=["you@example.com"],
+                         subject="hello", body_text="from my agent")
+```
+
+클레임(owner 검증)은 `https://loftbox.net/claim?org=<org_id>` 또는 API
+(`POST /v1/auth/claim/start` → `/v1/auth/claim/verify`)로 합니다. owner 에게는 가입 시
+클레임 안내 메일이 자동 발송됩니다.
+
 ## 빠른 시작
 
 ```python
