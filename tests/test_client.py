@@ -191,3 +191,74 @@ def test_context_manager_closes() -> None:
     client, _ = make_client(lambda req: httpx.Response(200, json={"data": []}))
     with client as c:
         c.agents.list()
+
+
+def test_message_parses_injection_signal() -> None:
+    """#369 인바운드 인젝션 신호 필드 파싱."""
+    client, _ = make_client(
+        lambda req: httpx.Response(
+            200,
+            json={
+                "id": "msg_1",
+                "direction": "incoming",
+                "injection_score": 0.78,
+                "injection_categories": ["instruction_override", "data_exfiltration"],
+            },
+        )
+    )
+    msg = client.messages.get("msg_1")
+    assert msg.injection_score == 0.78
+    assert msg.injection_categories == ["instruction_override", "data_exfiltration"]
+
+
+def test_inbound_rule_create_shapes_request() -> None:
+    """#370 규칙 생성 — body 구성 + 응답 파싱."""
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        assert req.method == "POST"
+        assert req.url.path == "/v1/inbound-rules"
+        body = json.loads(req.content)
+        assert body["rule_type"] == "block"
+        assert body["pattern_type"] == "domain"
+        assert body["pattern"] == "evil.com"
+        assert body["mailbox_id"] is None
+        return httpx.Response(
+            201,
+            json={
+                "id": "rule_1",
+                "rule_type": "block",
+                "pattern_type": "domain",
+                "pattern": "evil.com",
+            },
+        )
+
+    client, _ = make_client(handler)
+    rule = client.inbound_rules.create(
+        rule_type="block", pattern_type="domain", pattern="evil.com"
+    )
+    assert rule.id == "rule_1"
+    assert rule.rule_type == "block"
+
+
+def test_inbound_rule_list_filters_mailbox() -> None:
+    def handler(req: httpx.Request) -> httpx.Response:
+        assert req.url.path == "/v1/inbound-rules"
+        assert req.url.params.get("mailbox_id") == "mb_9"
+        return httpx.Response(200, json={"data": [{"id": "r1"}], "next_cursor": None})
+
+    client, _ = make_client(handler)
+    page = client.inbound_rules.list(mailbox_id="mb_9")
+    assert page.data[0].id == "r1"
+
+
+def test_inbound_rule_remove_uses_path() -> None:
+    captured: Captured = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        captured.append(req)
+        return httpx.Response(204)
+
+    client, _ = make_client(handler)
+    client.inbound_rules.remove("rule_42")
+    assert captured[0].method == "DELETE"
+    assert captured[0].url.path == "/v1/inbound-rules/rule_42"

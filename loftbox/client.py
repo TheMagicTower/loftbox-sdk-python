@@ -29,6 +29,7 @@ from .models import (
     Attachment,
     Domain,
     DomainStatus,
+    InboundSenderRule,
     Mailbox,
     Message,
     Page,
@@ -39,7 +40,7 @@ from .models import (
 
 DEFAULT_BASE_URL = "https://api.loftbox.net"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "loftbox-python/0.2.0"
+USER_AGENT = "loftbox-python/0.3.0"
 
 
 class LoftBox:
@@ -76,6 +77,7 @@ class LoftBox:
         self.webhooks = _Webhooks(self)
         self.domains = _Domains(self)
         self.suppressions = _Suppressions(self)
+        self.inbound_rules = _InboundRules(self)
         self.attachments = _Attachments(self)
 
     # -- transport ----------------------------------------------------------
@@ -429,6 +431,52 @@ class _Suppressions(_Resource):
 
     def remove(self, suppression_id: str) -> None:
         self._c._request("DELETE", f"/v1/suppressions/{suppression_id}")
+
+
+class _InboundRules(_Resource):
+    """#370 인바운드 발신자 allow/block 리스트 — 수신 통제."""
+
+    def list(
+        self,
+        *,
+        mailbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        before: Optional[str] = None,
+    ) -> Page[InboundSenderRule]:
+        raw = self._c._request(
+            "GET",
+            "/v1/inbound-rules",
+            params={"mailbox_id": mailbox_id, "limit": limit, "before": before},
+        )
+        return _page(raw, InboundSenderRule)
+
+    def create(
+        self,
+        *,
+        rule_type: str,
+        pattern_type: str,
+        pattern: str,
+        mailbox_id: Optional[str] = None,
+    ) -> InboundSenderRule:
+        """규칙 생성. rule_type=allow|block, pattern_type=address|domain.
+
+        mailbox_id 미지정 = org 전체. block 매치 또는 allow 리스트 미매치 발신자는 수신 거부.
+        """
+        return InboundSenderRule.model_validate(
+            self._c._request(
+                "POST",
+                "/v1/inbound-rules",
+                json={
+                    "rule_type": rule_type,
+                    "pattern_type": pattern_type,
+                    "pattern": pattern,
+                    "mailbox_id": mailbox_id,
+                },
+            )
+        )
+
+    def remove(self, rule_id: str) -> None:
+        self._c._request("DELETE", f"/v1/inbound-rules/{rule_id}")
 
 
 class _Attachments(_Resource):
