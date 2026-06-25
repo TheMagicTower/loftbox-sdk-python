@@ -15,6 +15,7 @@ from .models import (
     Attachment,
     Domain,
     DomainStatus,
+    InboundSenderRule,
     Mailbox,
     Message,
     Page,
@@ -23,7 +24,7 @@ from .models import (
     Webhook,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     "LoftBox",
     # models
@@ -31,6 +32,7 @@ __all__ = [
     "Attachment",
     "Domain",
     "DomainStatus",
+    "InboundSenderRule",
     "Mailbox",
     "Message",
     "Page",
