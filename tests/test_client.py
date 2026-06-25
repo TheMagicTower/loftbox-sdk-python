@@ -233,9 +233,7 @@ def test_inbound_rule_create_shapes_request() -> None:
         )
 
     client, _ = make_client(handler)
-    rule = client.inbound_rules.create(
-        rule_type="block", pattern_type="domain", pattern="evil.com"
-    )
+    rule = client.inbound_rules.create(rule_type="block", pattern_type="domain", pattern="evil.com")
     assert rule.id == "rule_1"
     assert rule.rule_type == "block"
 
