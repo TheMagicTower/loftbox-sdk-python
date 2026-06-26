@@ -54,10 +54,8 @@ class LoftBoxToolkit:
     def get_tools(self) -> List["StructuredTool"]:
         """LangChain 에이전트에 넘길 ``StructuredTool`` 목록."""
         c = self._client
-        guard = {
-            "injection_threshold": self._injection_threshold,
-            "block_high_injection": self._block_high_injection,
-        }
+        threshold = self._injection_threshold
+        block = self._block_high_injection
         return [
             StructuredTool.from_function(
                 func=partial(_common.run_send_email, c),
@@ -66,13 +64,23 @@ class LoftBoxToolkit:
                 args_schema=_common.SendEmailArgs,
             ),
             StructuredTool.from_function(
-                func=partial(_common.run_check_inbox, c, **guard),
+                func=partial(
+                    _common.run_check_inbox,
+                    c,
+                    injection_threshold=threshold,
+                    block_high_injection=block,
+                ),
                 name="check_inbox",
                 description=_common.CHECK_INBOX_DESCRIPTION,
                 args_schema=_common.CheckInboxArgs,
             ),
             StructuredTool.from_function(
-                func=partial(_common.run_list_messages, c, **guard),
+                func=partial(
+                    _common.run_list_messages,
+                    c,
+                    injection_threshold=threshold,
+                    block_high_injection=block,
+                ),
                 name="list_messages",
                 description=_common.LIST_MESSAGES_DESCRIPTION,
                 args_schema=_common.ListMessagesArgs,

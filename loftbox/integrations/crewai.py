@@ -157,14 +157,18 @@ def get_crewai_tools(
     injection_threshold/block_high_injection 으로 수신 메일 인젝션 가드를 조정한다
     (check_inbox/list_messages 에 적용).
     """
-    guard = {
-        "injection_threshold": injection_threshold,
-        "block_high_injection": block_high_injection,
-    }
     return [
         SendEmailTool(client),
-        CheckInboxTool(client, **guard),
-        ListMessagesTool(client, **guard),
+        CheckInboxTool(
+            client,
+            injection_threshold=injection_threshold,
+            block_high_injection=block_high_injection,
+        ),
+        ListMessagesTool(
+            client,
+            injection_threshold=injection_threshold,
+            block_high_injection=block_high_injection,
+        ),
         ApproveMessageTool(client),
         RejectMessageTool(client),
     ]
