@@ -35,13 +35,25 @@ class _LoftBoxBaseTool(BaseTool):
     """LoftBox 클라이언트를 들고 있는 CrewAI 도구 베이스.
 
     crewai ``BaseTool`` 은 pydantic 모델이라, 클라이언트는 PrivateAttr 로 저장한다.
+    인바운드 인젝션 가드 설정도 PrivateAttr 로 함께 보관한다.
     """
 
     _client: "LoftBox" = PrivateAttr()
+    _injection_threshold: float = PrivateAttr(default=_common.DEFAULT_INJECTION_THRESHOLD)
+    _block_high_injection: bool = PrivateAttr(default=False)
 
-    def __init__(self, client: "LoftBox", **kwargs: object) -> None:
+    def __init__(
+        self,
+        client: "LoftBox",
+        *,
+        injection_threshold: float = _common.DEFAULT_INJECTION_THRESHOLD,
+        block_high_injection: bool = False,
+        **kwargs: object,
+    ) -> None:
         super().__init__(**kwargs)
         self._client = client
+        self._injection_threshold = injection_threshold
+        self._block_high_injection = block_high_injection
 
 
 class SendEmailTool(_LoftBoxBaseTool):
@@ -80,7 +92,12 @@ class CheckInboxTool(_LoftBoxBaseTool):
         self, mailbox_id: str, limit: Optional[int] = None, cursor: Optional[str] = None
     ) -> str:
         return _common.run_check_inbox(
-            self._client, mailbox_id=mailbox_id, limit=limit, cursor=cursor
+            self._client,
+            mailbox_id=mailbox_id,
+            limit=limit,
+            cursor=cursor,
+            injection_threshold=self._injection_threshold,
+            block_high_injection=self._block_high_injection,
         )
 
 
@@ -106,6 +123,8 @@ class ListMessagesTool(_LoftBoxBaseTool):
             q=q,
             limit=limit,
             cursor=cursor,
+            injection_threshold=self._injection_threshold,
+            block_high_injection=self._block_high_injection,
         )
 
 
@@ -127,12 +146,29 @@ class RejectMessageTool(_LoftBoxBaseTool):
         return _common.run_reject_message(self._client, message_id=message_id, reason=reason)
 
 
-def get_crewai_tools(client: "LoftBox") -> List[BaseTool]:
-    """CrewAI Agent 에 넘길 LoftBox 도구 목록."""
+def get_crewai_tools(
+    client: "LoftBox",
+    *,
+    injection_threshold: float = _common.DEFAULT_INJECTION_THRESHOLD,
+    block_high_injection: bool = False,
+) -> List[BaseTool]:
+    """CrewAI Agent 에 넘길 LoftBox 도구 목록.
+
+    injection_threshold/block_high_injection 으로 수신 메일 인젝션 가드를 조정한다
+    (check_inbox/list_messages 에 적용).
+    """
     return [
         SendEmailTool(client),
-        CheckInboxTool(client),
-        ListMessagesTool(client),
+        CheckInboxTool(
+            client,
+            injection_threshold=injection_threshold,
+            block_high_injection=block_high_injection,
+        ),
+        ListMessagesTool(
+            client,
+            injection_threshold=injection_threshold,
+            block_high_injection=block_high_injection,
+        ),
         ApproveMessageTool(client),
         RejectMessageTool(client),
     ]
