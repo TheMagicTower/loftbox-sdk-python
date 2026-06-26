@@ -14,4 +14,17 @@
 
 from __future__ import annotations
 
-__all__ = ["langchain", "crewai"]
+# 인바운드 인젝션 가드 헬퍼는 프레임워크 의존성이 없어 직접 노출한다.
+from ._common import (
+    DEFAULT_INJECTION_THRESHOLD,
+    InjectionAssessment,
+    assess_injection,
+)
+
+__all__ = [
+    "langchain",
+    "crewai",
+    "assess_injection",
+    "InjectionAssessment",
+    "DEFAULT_INJECTION_THRESHOLD",
+]
